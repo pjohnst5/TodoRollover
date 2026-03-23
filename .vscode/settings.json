@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^npm run build && cp main\\.js \"\\$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Obsidian/\\.obsidian/plugins/todo-rollover/\" && cp main\\.js \"\\$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Obsidian/\\.mobile/plugins/todo-rollover/\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
