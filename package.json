@@ -1,0 +1,29 @@
+{
+  "name": "todorollover",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pjohnst5/TodoRollover.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pjohnst5/TodoRollover/issues"
+  },
+  "homepage": "https://github.com/pjohnst5/TodoRollover#readme",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "esbuild": "^0.27.4",
+    "obsidian": "^1.12.3",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.2"
+  }
+}

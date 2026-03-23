@@ -1,0 +1,9 @@
+{
+    "id": "todo-rollover",
+    "name": "Todo Rollover",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Rolls over unchecked todos from the previous daily note to the current daily note.",
+    "author": "Paul Johnston",
+    "isDesktopOnly": false
+}
