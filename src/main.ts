@@ -73,8 +73,18 @@ function extractUnfinishedTodos(
 }
 
 /**
+ * Strip the checkbox marker from a todo line to get just the text content.
+ * e.g. "- [ ] Buy milk" and "- [x] Buy milk" both become "Buy milk"
+ * Also handles indented items like "  - [ ] Sub-task"
+ */
+function todoText(line: string): string {
+  return line.replace(/^\s*-\s\[.\]\s*/, "").trim();
+}
+
+/**
  * Merge new todo lines into existing content under the given heading.
- * Creates the heading if it doesn't exist. Deduplicates by exact match.
+ * Creates the heading if it doesn't exist.
+ * Deduplicates by text content (ignoring checkbox state).
  */
 function mergeTodosIntoContent(
   content: string,
@@ -85,18 +95,16 @@ function mergeTodosIntoContent(
 
   const lines = content.split("\n");
 
-  // Collect existing todos under the heading so we can deduplicate
-  const existingTodos = new Set<string>();
+  // Collect existing todo *text* under the heading so we can deduplicate
+  // regardless of whether items are checked or unchecked.
+  const existingTexts = new Set<string>();
   let headingIndex = -1;
-  let sectionEndIndex = -1;
+  let lastListItemIndex = -1; // track the last list-item line in the section
   let inSection = false;
 
   for (let i = 0; i < lines.length; i++) {
     if (/^#{1,6}\s/.test(lines[i])) {
-      if (inSection) {
-        sectionEndIndex = i;
-        break;
-      }
+      if (inSection) break; // hit the next heading — section is over
       if (lines[i].trim().toLowerCase() === heading.trim().toLowerCase()) {
         headingIndex = i;
         inSection = true;
@@ -104,17 +112,23 @@ function mergeTodosIntoContent(
       continue;
     }
 
-    if (inSection) {
-      const trimmed = lines[i].trim();
-      if (trimmed.length > 0) {
-        existingTodos.add(trimmed);
-      }
+    if (!inSection) continue;
+
+    const trimmed = lines[i].trim();
+
+    // Track list items (checked or unchecked) and indented continuations
+    if (/^-\s\[.\]\s/.test(trimmed)) {
+      existingTexts.add(todoText(trimmed));
+      lastListItemIndex = i;
+    } else if (/^\s+-/.test(lines[i]) && lastListItemIndex !== -1) {
+      // indented sub-item of the previous list entry
+      lastListItemIndex = i;
     }
   }
 
-  // Deduplicate: only keep genuinely new entries
+  // Deduplicate: only keep entries whose text doesn't already appear
   const todosToAdd = newTodos.filter(
-    (t) => !existingTodos.has(t.trim())
+    (t) => !existingTexts.has(todoText(t))
   );
 
   if (todosToAdd.length === 0) return content;
@@ -131,12 +145,13 @@ function mergeTodosIntoContent(
     return content + suffix;
   }
 
-  // Insert right before the next heading (or at end of file)
-  const insertIndex = sectionEndIndex === -1 ? lines.length : sectionEndIndex;
+  // Insert right after the last list item in the section
+  // (or right after the heading if the section is empty)
+  const insertAfter =
+    lastListItemIndex !== -1 ? lastListItemIndex : headingIndex;
 
-  // Make sure there's a blank line before we append, for readability
   const block = todosToAdd.join("\n");
-  lines.splice(insertIndex, 0, block);
+  lines.splice(insertAfter + 1, 0, block);
 
   return lines.join("\n");
 }
