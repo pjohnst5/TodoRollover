@@ -259,27 +259,17 @@ export default class TodoRolloverPlugin extends Plugin {
     const prevContent = await this.app.vault.read(prevFile);
     const unfinished = extractUnfinishedTodos(prevContent, TODO_HEADING);
 
-    if (unfinished.length === 0) {
-      if (manual) {
-        new Notice("No unchecked todos found in the previous daily note.");
-      }
-      this.processedToday = true;
-      this.lastProcessedDate = dateKey;
-      return;
-    }
-
     // 4. Read today's note and merge
     const todayContent = await this.app.vault.read(todayFile as TFile);
     const { result: merged, added } = mergeTodosIntoContent(todayContent, TODO_HEADING, unfinished);
 
     if (merged !== todayContent) {
       await this.app.vault.modify(todayFile as TFile, merged);
-      new Notice(
-        `Rolled over ${added} todo(s) from ${prevFile.basename}.`
-      );
-    } else if (manual) {
-      new Notice("All todos already present — nothing to roll over.");
     }
+
+    new Notice(
+      `Rolled over ${added} todo(s) from ${prevFile.basename}.`
+    );
 
     this.processedToday = true;
     this.lastProcessedDate = dateKey;
