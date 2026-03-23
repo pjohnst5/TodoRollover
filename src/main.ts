@@ -90,8 +90,8 @@ function mergeTodosIntoContent(
   content: string,
   heading: string,
   newTodos: string[]
-): string {
-  if (newTodos.length === 0) return content;
+): { result: string; added: number } {
+  if (newTodos.length === 0) return { result: content, added: 0 };
 
   const lines = content.split("\n");
 
@@ -131,7 +131,7 @@ function mergeTodosIntoContent(
     (t) => !existingTexts.has(todoText(t))
   );
 
-  if (todosToAdd.length === 0) return content;
+  if (todosToAdd.length === 0) return { result: content, added: 0 };
 
   // If heading doesn't exist, append it at the end of the file
   if (headingIndex === -1) {
@@ -142,7 +142,7 @@ function mergeTodosIntoContent(
       "\n" +
       todosToAdd.join("\n") +
       "\n";
-    return content + suffix;
+    return { result: content + suffix, added: todosToAdd.length };
   }
 
   // Insert right after the last list item in the section
@@ -153,7 +153,7 @@ function mergeTodosIntoContent(
   const block = todosToAdd.join("\n");
   lines.splice(insertAfter + 1, 0, block);
 
-  return lines.join("\n");
+  return { result: lines.join("\n"), added: todosToAdd.length };
 }
 
 /**
@@ -270,12 +270,12 @@ export default class TodoRolloverPlugin extends Plugin {
 
     // 4. Read today's note and merge
     const todayContent = await this.app.vault.read(todayFile as TFile);
-    const merged = mergeTodosIntoContent(todayContent, TODO_HEADING, unfinished);
+    const { result: merged, added } = mergeTodosIntoContent(todayContent, TODO_HEADING, unfinished);
 
     if (merged !== todayContent) {
       await this.app.vault.modify(todayFile as TFile, merged);
       new Notice(
-        `Rolled over ${unfinished.length} todo(s) from ${prevFile.basename}.`
+        `Rolled over ${added} todo(s) from ${prevFile.basename}.`
       );
     } else if (manual) {
       new Notice("All todos already present — nothing to roll over.");
