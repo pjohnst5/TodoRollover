@@ -267,9 +267,11 @@ export default class TodoRolloverPlugin extends Plugin {
       await this.app.vault.modify(todayFile as TFile, merged);
     }
 
-    new Notice(
-      `Rolled over ${added} todo(s) from ${prevFile.basename}.`
-    );
+    if (added > 0) {
+      new Notice(
+        `Rolled over ${added} todo(s) from ${prevFile.basename}.`
+      );
+    }
 
     this.processedToday = true;
     this.lastProcessedDate = dateKey;
