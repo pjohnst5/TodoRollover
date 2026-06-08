@@ -64,8 +64,12 @@ function extractUnfinishedTodos(
     if (!inSection) continue;
 
     // Match unchecked checkbox lines (top-level or indented)
+    // Skip empty checkboxes (no text after the marker)
     if (/^(\s*)-\s\[ \]\s/.test(line)) {
-      todos.push(line);
+      const text = line.replace(/^\s*-\s\[ \]\s*/, "").trim();
+      if (text.length > 0) {
+        todos.push(line);
+      }
     }
   }
 
@@ -133,6 +137,19 @@ function mergeTodosIntoContent(
 
   if (todosToAdd.length === 0) return { result: content, added: 0 };
 
+  // Remove empty checkboxes (template placeholders) from the Todo section
+  if (headingIndex !== -1) {
+    for (let i = lines.length - 1; i > headingIndex; i--) {
+      // Stop if we hit another heading
+      if (/^#{1,6}\s/.test(lines[i])) break;
+      // Remove lines that are just "- [ ] " with no text
+      if (/^\s*-\s\[ \]\s*$/.test(lines[i])) {
+        lines.splice(i, 1);
+        if (lastListItemIndex >= i) lastListItemIndex--;
+      }
+    }
+  }
+
   // If heading doesn't exist, append it at the end of the file
   if (headingIndex === -1) {
     const suffix =
@@ -147,8 +164,15 @@ function mergeTodosIntoContent(
 
   // Insert right after the last list item in the section
   // (or right after the heading if the section is empty)
-  const insertAfter =
-    lastListItemIndex !== -1 ? lastListItemIndex : headingIndex;
+  // Re-scan for lastListItemIndex since empty checkboxes may have been removed
+  let insertAfter = headingIndex;
+  for (let i = headingIndex + 1; i < lines.length; i++) {
+    if (/^#{1,6}\s/.test(lines[i])) break;
+    const trimmed = lines[i].trim();
+    if (/^-\s\[.\]\s/.test(trimmed) || (/^\s+-/.test(lines[i]) && insertAfter > headingIndex)) {
+      insertAfter = i;
+    }
+  }
 
   const block = todosToAdd.join("\n");
   lines.splice(insertAfter + 1, 0, block);
